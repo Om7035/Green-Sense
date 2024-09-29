@@ -78,7 +78,7 @@
     </div>
 
     <script>
-      const API_KEY = "AIzaSyBB79MwndfkzWwlYLjXg9529SYow9oNFA0"; // Add your API key here
+      const API_KEY = "YOUR_API_KEY_HERE"; // Add your API key here
       const imageInput = document.getElementById("imageInput");
       const imagePreview = document.getElementById("imagePreview");
       const uploadForm = document.getElementById("uploadForm");
@@ -140,7 +140,7 @@
           downloadButton.classList.add("hidden");
 
           try {
-            const response = await fetch("https://api.example.com/analyze", {
+            const response = await fetch("http://localhost:5000/analyze", { // Ensure this URL is correct
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
