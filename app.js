@@ -21,48 +21,41 @@ app.use(express.static("public"));
 //routes
 //analyze
 app.post("/analyze", upload.single("image"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No image file uploaded" });
-    }
-
-    const imagePath = req.file.path;
-    const imageData = await fsPromises.readFile(imagePath, {
-      encoding: "base64",
-    });
-
-    // Log the image data size for debugging
-    console.log(`Received image of size: ${imageData.length} bytes`);
-
-    // Use the Gemini model to analyze the image
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent([
-      "Analyze this plant image and provide detailed analysis of its species, health, and care recommendations, its characteristics, care instructions, and any interesting facts. Please provide the response in plain text without using any markdown formatting.",
-      {
-        inlineData: {
-          mimeType: req.file.mimetype,
-          data: imageData,
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image file uploaded" });
+      }
+  
+      const imagePath = req.file.path;
+      const imageData = await fsPromises.readFile(imagePath, { encoding: "base64" });
+      console.log(`Received image of size: ${imageData.length} bytes`);
+  
+      // Gemini API call and response handling
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent([
+        "Analyze this plant image and provide detailed analysis.",
+        {
+          inlineData: {
+            mimeType: req.file.mimetype,
+            data: imageData,
+          },
         },
-      },
-    ]);
-
-    const plantInfo = result.response.text();
-
-    // Clean up: delete the uploaded file
-    await fsPromises.unlink(imagePath);
-
-    // Respond with the analysis result and the image data
-    res.json({
-      result: plantInfo,
-      image: `data:${req.file.mimetype};base64,${imageData}`,
-    });
-  } catch (error) {
-    console.error("Error analyzing image:", error); // Log the full error object
-    res
-      .status(500)
-      .json({ error: "An error occurred while analyzing the image" });
-  }
-});
+      ]);
+  
+      // Ensure the response contains valid content
+      if (!result || !result.response || typeof result.response.text !== "function") {
+        throw new Error("Invalid API response");
+      }
+  
+      const plantInfo = result.response.text();
+      await fsPromises.unlink(imagePath);
+      res.json({ result: plantInfo, image: `data:${req.file.mimetype};base64,${imageData}` });
+    } catch (error) {
+      console.error("Error analyzing image:", error);
+      res.status(500).json({ error: "An error occurred while analyzing the image" });
+    }
+  });
+  
 
 //download pdf
 app.post("/download", express.json(), async (req, res) => {
