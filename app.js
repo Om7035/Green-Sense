@@ -91,3 +91,28 @@ app.post("/download", express.json(), async (req, res) => {
         align: "center",
         valign: "center",
       });
+    }
+    doc.end();
+    // Wait for the PDF to be created
+    await new Promise((resolve, reject) => {
+      writeStream.on("finish", resolve);
+      writeStream.on("error", reject);
+    });
+    res.download(filePath, (err) => {
+      if (err) {
+        res.status(500).json({ error: "Error downloading the PDF report" });
+      }
+      fsPromises.unlink(filePath);
+    });
+  } catch (error) {
+    console.error("Error generating PDF report:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while generating the PDF report" });
+  }
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Listening on port ${port}`);
+});
