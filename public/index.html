@@ -176,6 +176,7 @@
               resultDiv.classList.remove("hidden");
             }
           } catch (error) {
+            console.error("Error during fetch:", error);
             resultDiv.textContent = "Error: " + error.message;
             resultDiv.classList.remove("hidden");
           } finally {
