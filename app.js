@@ -15,7 +15,7 @@ const upload = multer({ dest: "upload/" });
 app.use(express.json({ limit: "10mb" }));
 
 //initialize Google Generative AI
-const genAI = new GoogleGenerativeAI(process.env.API_KEY);
+const genAI = new GoogleGenerativeAI("AIzaSyBB79MwndfkzWwlYLjXg9529SYow9oNFA0");
 app.use(express.static("public"));
 
 //routes
