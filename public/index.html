@@ -78,6 +78,7 @@
     </div>
 
     <script>
+      const API_KEY = "YOUR_API_KEY_HERE"; // Add your API key here
       const imageInput = document.getElementById("imageInput");
       const imagePreview = document.getElementById("imagePreview");
       const uploadForm = document.getElementById("uploadForm");
@@ -128,42 +129,61 @@
       uploadForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        loadingDiv.classList.remove("hidden");
-        resultDiv.classList.add("hidden");
-        resultDiv.textContent = "";
-        downloadButton.classList.add("hidden");
+        const file = formData.get("image");
+        const reader = new FileReader();
 
-        try {
-          const response = await fetch("/analyze", {
-            method: "POST",
-            body: formData,
-          });
+        reader.onload = async function (e) {
+          const imageData = e.target.result.split(",")[1]; // Get base64 data
+          loadingDiv.classList.remove("hidden");
+          resultDiv.classList.add("hidden");
+          resultDiv.textContent = "";
+          downloadButton.classList.add("hidden");
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Unknown error occurred");
-          }
+          try {
+            const response = await fetch("https://api.example.com/analyze", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${API_KEY}`
+              },
+              body: JSON.stringify({
+                model: "gemini-1.5-flash",
+                prompt: "Analyze this plant image and provide detailed analysis.",
+                inlineData: {
+                  mimeType: file.type,
+                  data: imageData
+                }
+              })
+            });
 
-          const data = await response.json();
-          if (data.result) {
-            analysisResult = data.result;
-            analysisImage = data.image;
-            resultDiv.innerHTML =
-              "<h3 class='text-xl font-semibold text-gray-700'>Analysis Result:</h3><p class='text-gray-600'>" +
-              analysisResult.replace(/\n/g, "<br>") +
-              "</p>";
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || "Unknown error occurred");
+            }
+
+            const data = await response.json();
+            if (data.result) {
+              analysisResult = data.result;
+              analysisImage = `data:${file.type};base64,${imageData}`;
+              resultDiv.innerHTML =
+                "<h3 class='text-xl font-semibold text-gray-700'>Analysis Result:</h3><p class='text-gray-600'>" +
+                analysisResult.replace(/\n/g, "<br>") +
+                "</p>";
+              resultDiv.classList.remove("hidden");
+              downloadButton.classList.remove("hidden");
+            } else if (data.error) {
+              resultDiv.textContent = "Error: " + data.error;
+              resultDiv.classList.remove("hidden");
+            }
+          } catch (error) {
+            resultDiv.textContent = "Error: " + error.message;
             resultDiv.classList.remove("hidden");
-            downloadButton.classList.remove("hidden");
-          } else if (data.error) {
-            resultDiv.textContent = "Error: " + data.error;
-            resultDiv.classList.remove("hidden");
+          } finally {
+            loadingDiv.classList.add("hidden");
           }
-        } catch (error) {
-          resultDiv.textContent = "Error: " + error.message;
-          resultDiv.classList.remove("hidden");
-        } finally {
-          loadingDiv.classList.add("hidden");
-        }
+        };
+
+        reader.readAsDataURL(file);
       });
 
       downloadButton.addEventListener("click", async () => {
